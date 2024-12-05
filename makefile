@@ -1,11 +1,19 @@
-OBJECTS = ./main.o ./lib/chunk.o ./lib/debug.o \
-			./lib/value.o ./lib/memory.o -I
+OBJECTS = main.o chunk.o debug.o \
+			value.o memory.o vm.o
 
 CLOX: $(OBJECTS)
 	cc -o clox $(OBJECTS)
 
-# $(OBJECTS): ./include/chunk.h ./include/common.h \
-# 			./include/debug.h ./include/memory.h \
-# 			./include/value.h
+main.o:chunk.h common.h debug.h memory.h
+chunk.o:chunk.h value.h memory.h
+vm.o:common.h debug.h vm.h
+value.o:memory.h value.h
+debug.o:debug.h
+memory.o:memory.h
 
-./lib/chunk.o:./include/chunk.h 
+chunk.h:value.h common.h
+vm.h:value.h chunk.h
+value.h:common.h
+memory.h:common.h
+debug.h:chunk.h
+common.h:
