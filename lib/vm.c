@@ -103,9 +103,24 @@ static InterpretResult run(){
                 Value constant = READ_CONSTANT();
                 push(constant);
                 break;
+            case OP_NIL: push(NIL_VAL); break;
+            case OP_TRUE: push(BOOL_VAL(true)); break;
+            case OP_FALSE: push(BOOL_VAL(false)); break; 
+            case OP_EQUAL: {
+                Value b = pop();
+                Value a = pop();
+                push(BOOL_VAL(values_equal(a, b)));
+                break;
+            }
+            case OP_GREATER: BINARY_OP(BOOL_VAL, >); break;
+            case OP_LESS: BINARY_OP(BOOL_VAL,<); break;
+            
             case OP_ADD: BINARY_OP(NUMBER_VAL, +); break;
             case OP_SUBTRACT: BINARY_OP(NUMBER_VAL, -); break;
             case OP_DIVIDE: BINARY_OP(NUMBER_VAL, /); break;
+            case OP_NOT:
+                push(BOOL_VAL(is_falsey(pop())));
+                break;
             case OP_MULTIPLY: BINARY_OP(NUMBER_VAL, *); break;
             /*pop negate push back the result*/
             case OP_NEGATE:
@@ -128,6 +143,11 @@ static InterpretResult run(){
 #undef BINARY_OP
 #undef READ_CONSTANT
 #undef READ_BYTE
+}
+
+
+static bool is_falsey(Value value){
+    return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value));
 }
 
 static void runtime_error(const char* format, ...){
