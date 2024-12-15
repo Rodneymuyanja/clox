@@ -8,6 +8,7 @@
 #ifdef DEBUG_PRINT_CODE
 #include "debug.h"
 #endif
+#include <value.h>
 
 typedef struct{
     Token current;
@@ -66,6 +67,11 @@ static void grouping(){
 static void number(){
     double value = strtod(parser.previous.start,NULL);
     emit_constant(NUMBER_VAL(value));
+}
+
+static void string(){
+    emit_constant(OBJ_VAL(copy_string(parser.previous.start + 1,
+                                    parser.previous.length - 2)));
 }
 
 static void binary(){
