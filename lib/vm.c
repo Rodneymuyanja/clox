@@ -7,8 +7,14 @@
 #include "debug.h"
 #include "object.h"
 #include "memory.h"
+#include "compiler.h"
 
 VM vm;
+static void reset_stack();
+static InterpretResult run();
+static void runtime_error(const char* format, ...);
+static void concatenate();
+static bool is_falsey(Value value);
 
 void init_vm(){
     reset_stack();

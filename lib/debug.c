@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "debug.h"
+#include "value.h"
 
 static int simple_instruction(const char* name, int offset);
 static int constant_instruction(const char* name, Chunk* chunk, int offset);
@@ -98,6 +99,6 @@ static int constant_instruction(const char* name, Chunk* chunk, int offset){
     return offset + 2;
 }
 
-void print_value(Value value){
-    printf("%g",value);
-}
+// void print_value(Value value){
+//     printf("%g",value);
+// }

@@ -3,6 +3,8 @@
 #include "object.h"
 #include "vm.h"
 
+static void free_object(Obj* object);
+
 void* reallocate(void* pointer, size_t old_size, size_t new_size){
     if(new_size == 0){
         free(pointer);

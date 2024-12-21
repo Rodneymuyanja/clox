@@ -4,6 +4,7 @@
 #include "common.h"
 #include "compiler.h"
 #include "scanner.h"
+#include "object.h"
 
 #ifdef DEBUG_PRINT_CODE
 #include "debug.h"
@@ -30,6 +31,8 @@ typedef enum{
     PREC_PRIMARY     // . ()
 }Precedence;
 
+typedef void (*ParseFn)();
+
 typedef struct
 {
     ParseFn prefix;
@@ -37,14 +40,21 @@ typedef struct
     Precedence precedence;
 }ParseRule;
 
-typedef void (*ParseFn)();
-
 Parser parser;
 Chunk* compiling_chunk;
 
 static ParseRule* get_rule(TokenType type);
 static void parse_precedence(Precedence precedence);
 static void expression();
+static void advance();
+static void consume(TokenType type, const char* message);
+static void emit_constant(Value value);
+static void emit_byte(uint8_t byte);
+static void emit_bytes(uint8_t byte_1, uint8_t byte_2);
+static void error(const char* message);
+static uint8_t make_constant(Value value);
+static void error_at(Token* token, const char* message);
+static void error_at_current(const char* message);
 
 
 bool compile(const char* source, Chunk* chunk){

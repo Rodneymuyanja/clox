@@ -1,19 +1,38 @@
-OBJECTS = main.o chunk.o debug.o \
-			value.o memory.o vm.o
 
-CLOX: $(OBJECTS)
-	cc -o clox $(OBJECTS)
+# Directories
+BIN_DIR = bin
+LIB_DIR = lib
+INC_DIR = include
 
-main.o:chunk.h common.h debug.h memory.h
-chunk.o:chunk.h value.h memory.h
-vm.o:common.h debug.h vm.h
-value.o:memory.h value.h
-debug.o:debug.h
-memory.o:memory.h
+# Compiler and flags
+CC = cc
+CFLAGS = -Wall -Wextra -std=c99 -g -I$(INC_DIR)
 
-chunk.h:value.h common.h
-vm.h:value.h chunk.h
-value.h:common.h
-memory.h:common.h
-debug.h:chunk.h
-common.h:
+# Source and object files
+LIB_SOURCES = $(wildcard $(LIB_DIR)/*.c)
+LIB_OBJECTS = $(LIB_SOURCES:$(LIB_DIR)/%.c=$(BIN_DIR)/%.o)
+
+MAIN_SOURCE = main.c
+MAIN_OBJECT = $(BIN_DIR)/main.o
+
+# Target executable
+TARGET = $(BIN_DIR)/clox
+
+# Ensure bin directory exists
+$(shell mkdir $(BIN_DIR))
+
+# Build the executable
+$(TARGET): $(LIB_OBJECTS) $(MAIN_OBJECT)
+	$(CC) $(CFLAGS) -o $@ $^
+
+# Compile main.c
+$(MAIN_OBJECT): $(MAIN_SOURCE)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Compile library object files
+$(BIN_DIR)/%.o: $(LIB_DIR)/%.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Clean up build artifacts
+clean:
+	rm -f $(BIN_DIR)/*.o $(TARGET)

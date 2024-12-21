@@ -16,6 +16,21 @@ typedef struct
 
 Scanner scanner;
 
+static Token make_token(TokenType type);
+static bool is_at_end();
+static void skip_white_space();
+static char advance();
+static bool is_digit(char c);
+static Token number();
+static bool match(char expected);
+static Token string();
+static Token error_token(const char* message);
+static char peek();
+static char peek_next();
+static TokenType identifier_type();
+static bool is_alpha(char c);
+static TokenType check_keyword(int start, int length, const char* rest, TokenType type);
+
 void init_scanner(const char* source){
     scanner.start = source;
     scanner.current = source;
@@ -182,8 +197,9 @@ static bool is_alpha(char c){
            (c >= 'A' && c <= 'Z') ||
            c == '_';
 }
+
 /*
-    scans numbers
+    checks if the character is a digit
 */
 static bool is_digit(char c){
     return c >= '0' && c <= '9';

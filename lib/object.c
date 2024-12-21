@@ -9,6 +9,10 @@
 #define ALLOCATE_OBJ(type, object_type) \
         (type*)allocate_object(sizeof(type), object_type)
 
+static ObjString* allocate_string(char* chars, int length);
+static Obj* allocate_object(size_t size, ObjType type);
+
+
 ObjString* copy_string(const char* chars, int length){
     char* heap_chars = ALLOCATE(char, length + 1);
     memcpy(heap_chars, chars, length);

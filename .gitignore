@@ -1,0 +1,25 @@
+# Build directories
+bin/
+obj/
+*.o
+*.a
+*.out
+
+# Compiled executables
+clox
+
+# IDE or editor files
+.vscode/
+.idea/
+*.swp
+*~
+*.suo
+*.user
+*.log
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Makefile output
+Makefile~  # backup file for Makefile (if created by editor)
