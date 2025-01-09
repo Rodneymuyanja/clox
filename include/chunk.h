@@ -24,7 +24,6 @@ typedef enum{
     OP_NOT,
     OP_NEGATE,
     OP_RETURN,
-
 } OpCode;
 
 typedef struct{

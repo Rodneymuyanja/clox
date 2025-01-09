@@ -1,4 +1,3 @@
-
 # Directories
 BIN_DIR = bin
 LIB_DIR = lib
@@ -16,7 +15,7 @@ MAIN_SOURCE = main.c
 MAIN_OBJECT = $(BIN_DIR)/main.o
 
 # Target executable
-TARGET = $(BIN_DIR)/clox
+TARGET = $(BIN_DIR)/clox.exe
 
 # Ensure bin directory exists
 $(shell mkdir $(BIN_DIR))
@@ -33,6 +32,7 @@ $(MAIN_OBJECT): $(MAIN_SOURCE)
 $(BIN_DIR)/%.o: $(LIB_DIR)/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Clean up build artifacts
+# Clean up build artifacts (Windows version)
 clean:
-	rm -f $(BIN_DIR)/*.o $(TARGET)
+	del /f /q $(BIN_DIR)\*.o
+	del /f /q $(BIN_DIR)\*.exe

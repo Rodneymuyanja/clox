@@ -2,10 +2,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "./include/common.h"
-#include "./include/chunk.h"
-#include "./include/debug.h"
-#include "./include/vm.h"
+#include "common.h"
+#include "chunk.h"
+#include "debug.h"
+#include "vm.h"
 
 static char* read_file(const char* path);
 int main(int argc, const char * argv[]){
