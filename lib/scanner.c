@@ -22,6 +22,7 @@ static void skip_white_space();
 static char advance();
 static bool is_digit(char c);
 static Token number();
+static Token identifier();
 static bool match(char expected);
 static Token string();
 static Token error_token(const char* message);
@@ -44,6 +45,7 @@ Token scan_token(){
     if(is_at_end()) return make_token(TOKEN_EOF);
 
     char c = advance();
+    if(is_alpha(c)) return identifier();
     if(is_digit(c)) return number();
 
     switch (c)
@@ -132,13 +134,7 @@ static void skip_white_space(){
         }
     }
 }
-/*
-    makes an identifier
-*/
-static Token identifier(){
-    while(is_alpha(peek()) || is_digit(peek())) advance();
-    return make_token(identifier_type());
-}
+
 /*
     makes an identifier of a particular type
     using a 'trie' data structure
@@ -176,6 +172,13 @@ static TokenType identifier_type(){
         case 'w': return check_keyword(1,4, "hile", TOKEN_WHILE);
     }
     return TOKEN_IDENTIFIER;
+}
+/*
+    makes an identifier
+*/
+static Token identifier(){
+    while(is_alpha(peek()) || is_digit(peek())) advance();
+    return make_token(identifier_type());
 }
 /*
     this helps complete the semantics of a trie checks if the word we have matches the rest of the 
@@ -266,3 +269,10 @@ static Token error_token(const char* message){
     token.line = scanner.line;
     return token;
 }
+
+
+static TokenType indentifier_type(){
+    return TOKEN_IDENTIFIER;
+}
+
+

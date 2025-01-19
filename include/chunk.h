@@ -24,6 +24,11 @@ typedef enum{
     OP_NOT,
     OP_NEGATE,
     OP_RETURN,
+    OP_PRINT,
+    OP_POP,
+    OP_DEFINE_GLOBAL,
+    OP_GET_GLOBAL,
+    OP_SET_GLOBAL
 } OpCode;
 
 typedef struct{

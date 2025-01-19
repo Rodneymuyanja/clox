@@ -8,13 +8,16 @@
 #include "vm.h"
 
 static char* read_file(const char* path);
+static void repl();
+static void run_file(const char* path);
+
 int main(int argc, const char * argv[]){
     init_vm();
    
     if(argc == 1){
-
+        repl();
     }else if(argc == 2){
-
+        run_file(argv[1]);
     }else{
         /*
             stderr is found in #include <stdio.h>

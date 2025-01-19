@@ -19,9 +19,13 @@ static bool is_falsey(Value value);
 void init_vm(){
     reset_stack();
     vm.objects = NULL;
+    init_table(&vm.strings);
+    init_table(&vm.globals);
 }
 
 void free_vm(){
+    free_table(&vm.strings);
+    free_table(&vm.globals);
     free_objects();
 }
 
@@ -29,11 +33,13 @@ InterpretResult interpret(const char* source){
     Chunk chunk;
     init_chunk(&chunk);
 
+    printf("compiling\n");
     if(!compile(source,&chunk)){
         free_chunk(&chunk);
         return INTERPRET_COMPILE_ERROR;
     }
 
+    printf("done compiling\n");
     vm.chunk = &chunk;
     vm.ip = vm.chunk->code;
 
@@ -73,6 +79,7 @@ static void reset_stack(){
 static InterpretResult run(){
 #define READ_BYTE() (*vm.ip++)
 #define READ_CONSTANT() (vm.chunk->constants.values[READ_BYTE()])
+#define READ_STRING() AS_STRING(READ_CONSTANT())
 /*
     adventurous use of the C-Preprocessor, but pay attention here
     1 - operators can be passed as arguments, thats cuz the C-Preprocessor doesn't care that
@@ -150,11 +157,44 @@ static InterpretResult run(){
                     return INTERPRET_RUNTIME_ERROR;
                 }
                 push(NUMBER_VAL(-AS_NUMBER(pop())));
+            case OP_PRINT:{
+                print_value(pop());
+                printf("\n");
+                break;
+            }
             case OP_RETURN:
                 print_value(pop());
                 printf("\n");
                 return INTERPRET_OK;
 
+            case OP_POP: pop(); break;
+            case OP_DEFINE_GLOBAL:{
+                ObjString* name = READ_STRING();
+                table_set(&vm.globals, name, peek(0));
+                pop();
+            }
+
+            case OP_GET_GLOBAL:{
+                ObjString* name = READ_STRING();
+                Value value;
+                if(!table_get(&vm.globals,name,&value)){
+                    runtime_error("Undefined variable '%s'.", name->chars);
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                push(value);
+                break;
+            }
+
+            case OP_SET_GLOBAL:{
+                ObjString* name = READ_STRING();
+                if(table_set(&vm.globals,name,peek(0))){
+                    table_delete(&vm.globals, name);
+                    runtime_error("Setting Undefined variable '%s'", name->chars);
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+
+                break;
+            }
             
             default:
                 break;
@@ -164,6 +204,7 @@ static InterpretResult run(){
 #undef BINARY_OP
 #undef READ_CONSTANT
 #undef READ_BYTE
+#undef READ_STRING
 }
 
 

@@ -13,6 +13,15 @@
 static ObjString* allocate_string(char* chars, int length, uint32_t hash);
 static Obj* allocate_object(size_t size, ObjType type);
 
+/*FNV-1a*/
+static uint32_t hash_string(const char* key, int length){
+    uint32_t hash = 2166136261u;
+    for (int i = 0; i < length; i++){
+        hash ^= (uint8_t)key[i];
+        hash *= 16777619;
+    }
+    return hash;
+}
 
 ObjString* copy_string(const char* chars, int length){
     uint32_t hash = hash_string(chars, length);
@@ -45,6 +54,7 @@ static Obj* allocate_object(size_t size, ObjType type){
 }
 
 void print_object(Value value){
+    printf("in print_object");
     switch (OBJ_TYPE(value)){
         case OBJ_STRING:
             printf("%s",AS_CSTRING(value));
@@ -70,12 +80,3 @@ ObjString* take_string(char* chars, int length){
     return allocate_string(chars, length,hash);
 }
 
-/*FNV-1a*/
-static uint32_t hash_string(const char* key, int length){
-    uint32_t hash = 2166136261u;
-    for (int i = 0; i < length; i++){
-        hash ^= (uint8_t)key[i];
-        hash *= 16777619;
-    }
-    return hash;
-}

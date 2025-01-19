@@ -19,27 +19,6 @@ void free_table(Table* table){
     init_table(table);
 }
 
-bool table_set(Table* table, ObjString* key, Value value){
-    if(table->count + 1 > table->capacity * TABLE_MAX_LOAD){
-        int capacity = GROW_CAPACITY(table->capacity);
-        adjust_capacity(table,capacity);
-    }
-
-    Entry* entry = find_entry(table->entries, table->capacity,key);
-    bool is_new_key = entry->key == NULL;
-
-    /* 
-        count = NUMBER_OF_ENTRIES + TOMBSTONES
-        which is why we only increase the count of the table
-        if the entry was not a tombstone, this is how we keep the 
-        load factor in control
-    */
-    if(is_new_key && IS_NIL(entry->value)) table->count++;
-
-    entry->key = key;
-    entry->value = value;
-    return is_new_key;
-}
 
 static Entry* find_entry(Entry* entries, int capacity,
                                          ObjString* key){
@@ -116,6 +95,30 @@ static void adjust_capacity(Table* table, int capacity){
     table->entries = entries;
     table->capacity = capacity;
 }
+
+
+bool table_set(Table* table, ObjString* key, Value value){
+    if(table->count + 1 > table->capacity * TABLE_MAX_LOAD){
+        int capacity = GROW_CAPACITY(table->capacity);
+        adjust_capacity(table,capacity);
+    }
+
+    Entry* entry = find_entry(table->entries, table->capacity,key);
+    bool is_new_key = entry->key == NULL;
+
+    /* 
+        count = NUMBER_OF_ENTRIES + TOMBSTONES
+        which is why we only increase the count of the table
+        if the entry was not a tombstone, this is how we keep the 
+        load factor in control
+    */
+    if(is_new_key && IS_NIL(entry->value)) table->count++;
+
+    entry->key = key;
+    entry->value = value;
+    return is_new_key;
+}
+
 
 void table_add_all(Table* from, Table* to){
     for (int i = 0; i < from->capacity; i++){
