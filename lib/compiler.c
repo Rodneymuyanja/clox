@@ -71,7 +71,6 @@ bool compile(const char* source, Chunk* chunk){
     parser.had_error = false;
     parser.panic_mode = false;
 
-
     advance();
 
     while(!match(TOKEN_EOF)){
@@ -379,6 +378,8 @@ static void declaration(){
 static void statement(){
     if(match(TOKEN_PRINT)){
         print_statement();
+    }else{
+        expression_statement();
     }
 }
 
