@@ -47,7 +47,14 @@ typedef struct{
     int depth;
 }Local;
 
+typedef enum{
+    TYPE_FUNCTION,
+    TYPE_SCRIPT
+} FunctionType;
+
 typedef struct{
+    ObjFunction* function;
+    FunctionType type;
     Local locals[UINT8_COUNT];
     int local_count;
     int scope_depth;
@@ -74,27 +81,35 @@ static void statement();
 static void expression_statement();
 static void synchronize();
 static bool match(TokenType Token);
-static void end_compiler();
+static ObjFunction* end_compiler();
 static uint8_t identifier_constant(Token* name);
 static bool check(TokenType type);
 
-static void init_compiler(Compiler* compiler){
+static void init_compiler(Compiler* compiler, FunctionType type){
+    compiler->function = NULL;
+    compiler->type = type;
     compiler->local_count = 0;
     compiler->scope_depth = 0;
+    compiler->function = new_function();
     current = compiler;
+
+    Local* local = &current->locals[current->local_count++];
+    local->depth = 0;
+    local->name.start = "";
+    local->name.length = 0;
 }
 
 
 static Chunk* current_chunk(){
-    return compiling_chunk;
+    return &current->function->chunk;
 }
 
-bool compile(const char* source, Chunk* chunk){
+ObjFunction* compile(const char* source){
     init_scanner(source);
     Compiler compiler;
-    init_compiler(&compiler);
+    init_compiler(&compiler,TYPE_SCRIPT);
 
-    compiling_chunk = chunk;
+    //compiling_chunk = chunk;
     parser.had_error = false;
     parser.panic_mode = false;
 
@@ -104,8 +119,8 @@ bool compile(const char* source, Chunk* chunk){
         declaration();
     }
 
-    end_compiler();
-    return !parser.had_error;
+    ObjFunction* function = end_compiler();
+    return parser.had_error ? NULL : function;
 }
 
 
@@ -349,14 +364,15 @@ static void emit_return(){
     emit_byte(OP_RETURN);
 }
 
-static void end_compiler(){
+static ObjFunction* end_compiler(){
     emit_return();
-
+    ObjFunction* function = current->function;
 #ifdef DEBUG_PRINT_CODE
     if(!parser.had_error){
-        disassemble_chunk(current_chunk(),"code");
+        disassemble_chunk(current_chunk(), function->name != NULL ? function->name->chars : "<script>");
     }
 #endif
+    return function;
 }
 
 static void emit_constant(Value value){
@@ -492,6 +508,7 @@ static uint8_t parse_variable(const char* error_message){
 }
 
 static void mark_initialized(){
+    if(current->scope_depth == 0) return;
     current->locals[current->local_count-1].depth =
         current->scope_depth;
 }
@@ -613,9 +630,31 @@ static void for_statement(){
     end_scope();
 }
 
+static void function(FunctionType type){
+    Compiler compiler;
+    init_compiler(&compiler, type);
+    begin_scope();
+
+    consume(TOKEN_LEFT_PAREN,"Expect '(' after function name.");
+    consume(TOKEN_RIGHT_PAREN,"Expect ')' after function name.");
+    consume(TOKEN_LEFT_BRACE,"Expect '{' after function name.");
+    block();
+
+    ObjFunction* function = end_compiler();
+    emit_bytes(OP_CONSTANT, make_constant(OBJ_VAL(function)));
+}
+
+static void fun_declaration(){
+    uint8_t global = parse_variable("Expect function name");
+    mark_initialized();
+    function(TYPE_FUNCTION);
+    define_variable(global);
+}
 
 static void declaration(){
-    if(match(TOKEN_VAR)){
+    if(match(TOKEN_FUN)){
+        fun_declaration();
+    }else if(match(TOKEN_VAR)){
         var_declaration();
     }else{
         statement();
