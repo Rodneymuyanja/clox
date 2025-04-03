@@ -30,6 +30,7 @@ typedef enum{
     PREC_TERM,       // + -
     PREC_FACTOR,     // * /
     PREC_UNARY,      // ! - 
+    PREC_CALL,       // ( --this thing is handled like an infix operator
     PREC_PRIMARY     // . ()
 }Precedence;
 
@@ -53,6 +54,7 @@ typedef enum{
 } FunctionType;
 
 typedef struct{
+    Compiler* enclosing;
     ObjFunction* function;
     FunctionType type;
     Local locals[UINT8_COUNT];
@@ -86,12 +88,18 @@ static uint8_t identifier_constant(Token* name);
 static bool check(TokenType type);
 
 static void init_compiler(Compiler* compiler, FunctionType type){
+    compiler->enclosing = current;
     compiler->function = NULL;
     compiler->type = type;
     compiler->local_count = 0;
     compiler->scope_depth = 0;
     compiler->function = new_function();
     current = compiler;
+
+    if(type != TYPE_SCRIPT){
+        current->function->name 
+            = copy_string(parser.previous.start, parser.previous.length);
+    }
 
     Local* local = &current->locals[current->local_count++];
     local->depth = 0;
@@ -274,9 +282,31 @@ static bool match(TokenType type){
     return true;
 }
 
+static uint8_t argument_list(){
+    uint8_t arg_count = 0;
+    if(!check(TOKEN_RIGHT_PAREN)){
+        do {
+            expression();
+            if(arg_count == 255){
+                error("Too many arguments (255)");
+            }
+
+            arg_count++;
+        } while (match(TOKEN_COMMA));
+        
+    }
+
+    consume(TOKEN_RIGHT_PAREN,"Expected ')' after function call");
+    return arg_count;
+}
+
+static void call(bool can_assign){
+    uint8_t arg_count = argument_list();
+    emit_bytes(OP_CALL, arg_count);
+}
 
 ParseRule rules[] = {
-    [TOKEN_LEFT_PAREN]      = {grouping, NULL, PREC_NONE},
+    [TOKEN_LEFT_PAREN]      = {grouping, call, PREC_CALL},
     [TOKEN_RIGHT_PAREN]     = {NULL, NULL, PREC_NONE},
     [TOKEN_LEFT_BRACE]      = {NULL, NULL, PREC_NONE},
     [TOKEN_RIGHT_BRACE]     = {NULL, NULL, PREC_NONE},
@@ -361,6 +391,8 @@ static void emit_bytes(uint8_t byte_1, uint8_t byte_2){
 }
 
 static void emit_return(){
+    //this thing is only called when there's no explicit return statement
+    emit_byte(OP_NIL);
     emit_byte(OP_RETURN);
 }
 
@@ -372,6 +404,7 @@ static ObjFunction* end_compiler(){
         disassemble_chunk(current_chunk(), function->name != NULL ? function->name->chars : "<script>");
     }
 #endif
+    current = current->enclosing;
     return function;
 }
 
@@ -636,6 +669,19 @@ static void function(FunctionType type){
     begin_scope();
 
     consume(TOKEN_LEFT_PAREN,"Expect '(' after function name.");
+
+    if(!check(TOKEN_LEFT_PAREN)){
+        do{
+            current->function->arity ++;
+            if(current->function->arity > 255){
+                error_at_current("Too many parameters. The number of parameters can not exceed 255.");
+            }
+
+            uint8_t constant = parse_variable("Expected a parameter name.");
+            define_variable(constant);
+        } while (match(TOKEN_COMMA));
+    }
+
     consume(TOKEN_RIGHT_PAREN,"Expect ')' after function name.");
     consume(TOKEN_LEFT_BRACE,"Expect '{' after function name.");
     block();
@@ -671,6 +717,20 @@ static void block(){
     consume(TOKEN_RIGHT_BRACE, "Expected '}' after block statement.");
 }
 
+static void return_statement(){
+    if(current->type == TYPE_SCRIPT){
+        error("Can not return from the top level function, it is a script.");
+    }
+
+    if(match(TOKEN_SEMICOLON)){
+        emit_return();
+        return;
+    }
+
+    expression();
+    consume(TOKEN_SEMICOLON,"Expected ';' after the return statement.");
+    emit_byte(OP_RETURN);
+}
 
 static void statement(){
     if(match(TOKEN_PRINT)){
@@ -688,6 +748,8 @@ static void statement(){
     }else if(match(TOKEN_IF)){
         if_statement();
 
+    }else if(match(TOKEN_RETURN)){
+        return_statement();
     }
     else{
         expression_statement();
