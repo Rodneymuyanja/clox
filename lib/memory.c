@@ -37,5 +37,8 @@ static void free_object(Obj* object){
             free_chunk(&function->chunk);
             FREE(ObjFunction,object);
             break;
+        case OBJ_NATIVE:
+            FREE(ObjNative, object);
+            break;
     }
 }
